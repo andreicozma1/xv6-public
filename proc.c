@@ -6,10 +6,14 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "pstat.h"
+#include "random.c"
 
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
+  /* ANDREI: Added totaltickets counter used to determine cpu time allotted per process */
+  int total_tickets;
 } ptable;
 
 static struct proc *initproc;
@@ -38,10 +42,10 @@ struct cpu*
 mycpu(void)
 {
   int apicid, i;
-  
+
   if(readeflags()&FL_IF)
     panic("mycpu called with interrupts enabled\n");
-  
+
   apicid = lapicid();
   // APIC IDs are not guaranteed to be contiguous. Maybe we should have
   // a reverse map, or reserve a register to store &cpus[i].
@@ -89,6 +93,11 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
+  /* ANDREI: Added tickets field default value of 1 */
+  p->tickets = 1;
+  ptable.total_tickets += 1;
+  p->ticks = 0;
+
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -124,7 +133,7 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
-  
+
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
     panic("userinit: out of memory?");
@@ -199,6 +208,8 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+  /* ANDREI: Child tickets starts the same as parent tickets */
+  np->tickets = curproc->tickets;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -249,7 +260,12 @@ exit(void)
 
   acquire(&ptable.lock);
 
-  // Parent might be sleeping in wait().
+  /* ANDREI: decrement total_tickets */
+  ptable.total_tickets -= curproc->tickets;
+  curproc->tickets = 0;
+  curproc->ticks = 0;
+
+    // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
 
   // Pass abandoned children to init.
@@ -275,7 +291,7 @@ wait(void)
   struct proc *p;
   int havekids, pid;
   struct proc *curproc = myproc();
-  
+
   acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children.
@@ -322,36 +338,55 @@ wait(void)
 void
 scheduler(void)
 {
+  /* ANDREI: Declare variable for lottery winner */
+  int counter, winner;
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
-  
+
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
+    /* ANDREI:  pick random number for lottery */
+    counter = 0;
+    winner = randomrange(0, ptable.total_tickets);
+
+
+
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    for(p = &ptable.proc[0]; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+      /* ANDREI: Implement lottery scheduler algorithm */
+      counter = counter + p->tickets;
 
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
+      if(counter > winner) {
+          // Switch to chosen process.  It is the process's job
+          // to release ptable.lock and then reacquire it
+          // before jumping back to us.
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+          c->proc = p;
+          switchuvm(p);
+          p->state = RUNNING;
+
+          /* ANDREI: Increment ticks of process running */
+          cprintf("%d, %d, %d, %d\n", , p->pid, p->tickets, p->ticks);
+          p->ticks = p->ticks + 1;
+
+
+          swtch(&(c->scheduler), p->context);
+          switchkvm();
+
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          c->proc = 0;
+          break;
+      }
     }
     release(&ptable.lock);
-
   }
 }
 
@@ -418,7 +453,7 @@ void
 sleep(void *chan, struct spinlock *lk)
 {
   struct proc *p = myproc();
-  
+
   if(p == 0)
     panic("sleep");
 
@@ -488,6 +523,12 @@ kill(int pid)
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
+
+      /* ANDREI: Decrement total tickets when process is killed */
+      ptable.total_tickets -= p->tickets;
+      p->tickets = 0;
+      p->ticks = 0;
+
       release(&ptable.lock);
       return 0;
     }
@@ -529,6 +570,48 @@ procdump(void)
       for(i=0; i<10 && pc[i] != 0; i++)
         cprintf(" %p", pc[i]);
     }
+    /* ANDREI: add tickets to procdump */
+    cprintf(" Tickets:%d Ticks:%d", p->tickets, p->ticks);
     cprintf("\n");
   }
+  cprintf("TOTAL TICKETS: %d\n", ptable.total_tickets);
+}
+
+/* ANDREI: Implement settickets function
+ * The function takes the number of tickets to assign to a process.
+ * The number of tickets must be greater than 0.
+ * If number of tickets < 1, return -1, otherwise return 0
+ * */
+int
+settickets(int number)
+{
+    struct proc* p;
+    if(number < 1)
+        return -1;
+
+    p = myproc();
+    ptable.total_tickets = ptable.total_tickets + (number - p->tickets);
+    p->tickets = number;
+
+    return 0;
+}
+
+/* ANDREI: Implement getpinfo function
+ * The function takes in a pstat structure and fills it in with the process info
+ * If the pstat struct pointer is invalid return -1, otherwise return 0
+ * */
+int
+getpinfo(struct pstat *stat)
+{
+    int p;
+    if(!stat)
+        return -1;
+
+    for(p = 0; p < NPROC; p++) {
+        stat->inuse[p] = ptable.proc[p].state != UNUSED;
+        stat->tickets[p] = ptable.proc[p].tickets;
+        stat->pid[p] = ptable.proc[p].pid;
+        stat->ticks[p] = ptable.proc[p].ticks;
+    }
+    return 0;
 }
