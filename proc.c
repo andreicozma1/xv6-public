@@ -348,43 +348,40 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    /* ANDREI:  pick random number for lottery */
-    counter = 0;
-    winner = randomrange(0, ptable.total_tickets);
-
-
-
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = &ptable.proc[0]; p < &ptable.proc[NPROC]; p++){
+    /* ANDREI:  pick random number for lottery */
+    counter = 0;
+    winner = random_at_most(ptable.total_tickets);
+
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
 
       /* ANDREI: Implement lottery scheduler algorithm */
       counter = counter + p->tickets;
+      if(counter < winner)
+        continue;
 
-      if(counter > winner) {
-          // Switch to chosen process.  It is the process's job
-          // to release ptable.lock and then reacquire it
-          // before jumping back to us.
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
 
-          c->proc = p;
-          switchuvm(p);
-          p->state = RUNNING;
+      /* ANDREI: Increment counter to keep track of how many times the process was picked */
+      p->ticks = p->ticks + 1;
+      // cprintf("%d, %d, %d\n", p->pid, p->tickets, p->ticks);
 
-          /* ANDREI: Increment ticks of process running */
-          cprintf("%d, %d, %d, %d\n", , p->pid, p->tickets, p->ticks);
-          p->ticks = p->ticks + 1;
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      swtch(&(c->scheduler), p->context);
 
+      switchkvm();
 
-          swtch(&(c->scheduler), p->context);
-          switchkvm();
-
-          // Process is done running for now.
-          // It should have changed its p->state before coming back.
-          c->proc = 0;
-          break;
-      }
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+      break;
     }
     release(&ptable.lock);
   }
