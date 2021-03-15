@@ -51,7 +51,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   /* ANDREI: Added tickets field and ticks */
   int tickets;
-  int ticks;
+  int picks;
 };
 
 // Process memory is laid out contiguously, low addresses first:

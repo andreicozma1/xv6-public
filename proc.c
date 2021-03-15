@@ -369,7 +369,7 @@ scheduler(void)
 
       /* ANDREI: Increment counter to keep track of how many times the process was picked */
       p->ticks = p->ticks + 1;
-      // cprintf("%d, %d, %d\n", p->pid, p->tickets, p->ticks);
+//      cprintf("%d, %d, %d\n", p->pid, p->tickets, p->ticks);
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it

@@ -12,7 +12,7 @@ test(void)
 {
 
     int i;
-    int t[3] = {10, 20, 30};
+    int t[3] = {10, 30, 90};
     for(i = 1; i < 4; i++) {
         int pid = fork();
         if(pid > 0) {
