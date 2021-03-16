@@ -1,5 +1,5 @@
 
-**CS361 - Lottery Scheduler Project**
+# CS361 - Lottery Scheduler Project**
 
 **by Andrei Cozma, due March 17th 2021**
 
