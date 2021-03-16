@@ -8,9 +8,7 @@
 int
 main(void)
 {
-
   if(fork() > 0)
-    sleep(1000);  // Let child exit before parent.
-
+    sleep(5);  // Let child exit before parent.
   exit();
 }
