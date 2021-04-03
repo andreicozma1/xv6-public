@@ -5,8 +5,7 @@
 #include "user.h"
 
 int main() {
-    int *i = 0x0;
-    int j = *i;
-    printf(1, "%d\n", j);
+    char *j = sbrk(0);
+
     return 0;
 }
