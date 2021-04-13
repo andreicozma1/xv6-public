@@ -9,7 +9,8 @@ void print(char *str, int *ptr) {
 }
 
 void test_normal() {
-    if((fork()) > 0) {
+    int pid = fork();
+    if(pid == 0) {
         printf(1, "Test Normal\n");
         int *ptr = malloc(sizeof(int));
         *ptr = 1;
@@ -22,8 +23,8 @@ void test_normal() {
 }
 
 void test_protected() {
-
-    if((fork()) != -1) {
+    int pid = fork();
+    if(pid == 0) {
         printf(1, "Test Protected\n");
         int *ptr = malloc(sizeof(int));
         *ptr = 1;
@@ -34,11 +35,11 @@ void test_protected() {
         exit();
     }
     wait();
-
 }
 
 void test_unprotected() {
-    if((fork()) != -1) {
+    int pid = fork();
+    if(pid == 0) {
         printf(1, "Test Unprotected\n");
         int *ptr = malloc(sizeof(int));
         *ptr = 1;
@@ -54,11 +55,28 @@ void test_unprotected() {
     wait();
 }
 
+void test_fork() {
+    int *ptr = malloc(sizeof(int));
+    *ptr = 1;
+    mprotect((void *) 0xB000, 1);
+
+    int pid = fork();
+    if(pid == 0) {
+        printf(1, "Test Fork\n");
+        print(" - Value before", ptr);
+        *ptr = 2;
+        print(" - Value after", ptr);
+        exit();
+    }
+    wait();
+}
+
 int main() {
 
     test_normal();
     test_protected();
     test_unprotected();
+    test_fork();
 
     exit();
 }
