@@ -24,6 +24,10 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+/* Andrei: Define system calls from vm.c */
+int mprotect(void *addr, int len);
+int munprotect(void *addr, int len);
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

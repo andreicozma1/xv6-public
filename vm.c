@@ -392,3 +392,35 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 //PAGEBREAK!
 // Blank page.
 
+int
+msetprotect(void *addr, int len, int protect) {
+    void *i;
+    pte_t *pte;
+    pde_t *pgdir = myproc()->pgdir;
+
+    if((uint) addr % PGSIZE != 0 || len < 0)
+        return -1;
+
+    for(i = addr; i < addr + (len * PGSIZE); i += PGSIZE) {
+        if ((pte = walkpgdir(pgdir, i, 0)) == 0)
+            return -1;
+        if(protect)
+            *pte &= ~PTE_W;
+        else
+            *pte |= PTE_W;
+    }
+    lcr3(V2P(pgdir));
+    return 0;
+}
+
+/* Andrei add system call for protect */
+int
+mprotect(void *addr, int len) {
+    return msetprotect(addr, len, 1);
+}
+/* Andrei add system call for unprotect */
+int
+munprotect(void *addr, int len) {
+    return msetprotect(addr, len, 0);
+}
+

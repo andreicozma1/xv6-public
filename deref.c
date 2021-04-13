@@ -4,9 +4,10 @@
 #include "types.h"
 #include "user.h"
 
-int main() {
+int
+main() {
     int *i = 0x0;
     int j = *i;
     printf(1, "%d\n", j);
-    return 0;
+    exit();
 }

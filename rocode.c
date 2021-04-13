@@ -4,8 +4,61 @@
 #include "types.h"
 #include "user.h"
 
+void print(char *str, int *ptr) {
+    printf(1, "%s at 0x%p is %d\n", str, ptr, *ptr);
+}
+
+void test_normal() {
+    if((fork()) > 0) {
+        printf(1, "Test Normal\n");
+        int *ptr = malloc(sizeof(int));
+        *ptr = 1;
+        print(" - Value before", ptr);
+        *ptr = 2;
+        print(" - Value after", ptr);
+        exit();
+    }
+    wait();
+}
+
+void test_protected() {
+
+    if((fork()) != -1) {
+        printf(1, "Test Protected\n");
+        int *ptr = malloc(sizeof(int));
+        *ptr = 1;
+        mprotect((void *) 0xB000, 1);
+        print(" - Value before", ptr);
+        *ptr = 2;
+        print(" - Value after", ptr);
+        exit();
+    }
+    wait();
+
+}
+
+void test_unprotected() {
+    if((fork()) != -1) {
+        printf(1, "Test Unprotected\n");
+        int *ptr = malloc(sizeof(int));
+        *ptr = 1;
+
+        mprotect((void *) 0xB000, 1);
+        munprotect((void *) 0xB000, 1);
+
+        print(" - Value before", ptr);
+        *ptr = 2;
+        print(" - Value after", ptr);
+        exit();
+    }
+    wait();
+}
+
 int main() {
-    char *i = 0;
-    printf(1, "%x\n", &i);
-    return 0;
+
+    test_normal();
+    test_protected();
+    test_unprotected();
+
+    exit();
 }
