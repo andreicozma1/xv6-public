@@ -6,7 +6,7 @@
 
 int
 main() {
-    int *i = (int *) 0x0;
+    int *i = 0x0;
     int j = *i;
     printf(1, "%d\n", j);
     exit();
