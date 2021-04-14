@@ -29,3 +29,6 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+/* Andrei: added mprotect and munprotect system calls */
+SYSCALL(mprotect)
+SYSCALL(munprotect)

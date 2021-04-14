@@ -89,3 +89,39 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+/* Andrei add sys_mprotect system call */
+int
+sys_mprotect(void)
+{
+    char *addr;
+    int len;
+    int result;
+
+    if(argptr(0, &addr, sizeof(void *) < 0))
+        return -1;
+    if(argint(1, &len) < 0)
+        return -1;
+
+    result = mprotect(addr, len);
+    return result;
+}
+
+/* Andrei add sys_munprotect call */
+int
+sys_munprotect(void)
+{
+    char *addr;
+    int len;
+    int result;
+
+    if(argptr(0, &addr, sizeof(void *) < 0))
+        return -1;
+    if(argint(1, &len) < 0)
+        return -1;
+
+    result = munprotect(addr, len);
+    return result;
+}
+
+
