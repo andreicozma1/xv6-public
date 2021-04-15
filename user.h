@@ -1,5 +1,7 @@
 struct stat;
 struct rtcdate;
+/* ANDREI: add pstat structure to the structures accessible by the user program*/
+struct pstat;
 
 // system calls
 int fork(void);
@@ -23,6 +25,9 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+/* ANDREI: Ensure settickets and getinfo systemcalls allowed to be used by the user program */
+int settickets(int);
+int getpinfo(struct pstat*);
 
 // ulib.c
 int stat(const char*, struct stat*);

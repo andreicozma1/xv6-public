@@ -9,6 +9,8 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+/* ANDREI: add pstat structure to the structures accessible by program*/
+struct pstat;
 
 // bio.c
 void            binit(void);
@@ -120,6 +122,9 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+/* ANDREI: Ensure settickets and getinfo systemcalls allowed to be used by the program */
+int settickets(int);
+int getpinfo(struct pstat*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
