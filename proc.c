@@ -173,7 +173,7 @@ growproc(int n)
   // Loop through ptable and update the size of other processes that share the same pgdir (threads)
   struct proc *p;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-      if( p != curproc & p->pgdir == curproc->pgdir)
+      if( p != curproc && p->pgdir == curproc->pgdir)
             p->sz = sz;
   }
 
@@ -632,13 +632,13 @@ int join(void **stack)
     }
 
     // No point waiting if we don't have any children.
-    if(!havekids || proc->killed){
+    if(!havekids || curproc->killed){
       release(&ptable.lock);
       return -1;
     }
 
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
-    sleep(proc, &ptable.lock);  //DOC: wait-sleep
+    sleep(curproc, &ptable.lock);  //DOC: wait-sleep
   }
 
 }

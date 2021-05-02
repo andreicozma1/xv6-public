@@ -6,7 +6,6 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-#include "sysfunc.h"
 #include "spinlock.h"
 
 int sys_clone(void)
@@ -28,7 +27,7 @@ int sys_clone(void)
 
 int sys_join(void)
 {
-  void **stack = NULL;
+  void **stack = 0;
   if(argptr(0, (void*)&stack, sizeof(void**)) < 0)
     return -1;
   return join(stack);

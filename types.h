@@ -8,4 +8,3 @@ typedef struct _lock_t {
     int ticket;
     int turn;
 } lock_t;
-

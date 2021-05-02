@@ -21,11 +21,10 @@ struct ptr_struct threads[MAX_THREADS];
 static inline int
 fetch_and_add(int *var, int val)
 {
-    __asm__ volatile("lock; xaddl %0, %1"
-    : "+r" (val), "+m" (*var) // in + out
-    : // No input
-    : "memory"
-    );
+    asm volatile("lock; xaddl %0, %1"
+    : "+r" (val), "+m" (*var)
+    :
+    : "memory");
     return val;
 }
 
@@ -55,7 +54,7 @@ lock_release(lock_t *lock)
 }
 
 int
-thread_create(void (*start_routine)(void*, void*), void* arg1, void* arg2)
+thread_create(void (*fnc)(void*, void*), void* arg1, void* arg2)
 {
   // Use malloc to create userstack for thread
   // The stack should be one page in size and page-aligned
@@ -80,7 +79,7 @@ thread_create(void (*start_routine)(void*, void*), void* arg1, void* arg2)
     }
   }
   // Stack address must be page aligned to give to clone
-  int ret = clone(start_routine, arg1, arg2, stack);
+  int ret = clone(fnc, arg1, arg2, stack);
   return ret;
 }
 
@@ -95,8 +94,8 @@ thread_join()
   for(int i = 0; i < MAX_THREADS; i++) {
     if(threads[i].state == USED && threads[i].stack == stack){
       free(threads[i].ptr);
-      threads[i].ptr = NULL;
-      threads[i].stack = NULL;
+      threads[i].ptr = 0;
+      threads[i].stack = 0;
       threads[i].state = UNUSED;
       break;
     }
