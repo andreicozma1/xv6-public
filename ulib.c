@@ -41,8 +41,10 @@ void
 lock_acquire(lock_t *lock)
 {
     // Use the static inline function to spin the lock till the values become equal (on release)
-    int turn = fetch_and_add(&lock->ticket, 1);
-    while(lock->turn != turn) {} // spin lock
+    while(lock->turn != fetch_and_add(&lock->ticket, 1))
+    { continue; }; // spin lock
+//    printf(1, "Lock acquired");
+    // Lock acquired
 }
 
 /* Andrei: Release lock by setting the turn to 1,
@@ -50,7 +52,7 @@ lock_acquire(lock_t *lock)
 void
 lock_release(lock_t *lock)
 {
-    lock->turn = lock->turn + 1;
+    fetch_and_add(&lock->turn, 1);
 }
 
 int
