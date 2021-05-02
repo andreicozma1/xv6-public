@@ -6,6 +6,33 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "sysfunc.h"
+#include "spinlock.h"
+
+int sys_clone(void)
+{
+  void (*fcn)(void *, void *);
+  void *arg1;
+  void *arg2;
+  void *stack;
+  if(argptr(0, (void*)&fcn, sizeof(void*)) < 0)
+    return -1;
+  if(argptr(1, (void*)&arg1, sizeof(void*)) < 0)
+    return -1;
+  if(argptr(2, (void*)&arg2, sizeof(void*)) < 0)
+    return -1;
+  if(argptr(3, (void*)&stack, sizeof(void*)) < 0)
+    return -1;
+  return clone(fcn, arg1, arg2, stack);
+}
+
+int sys_join(void)
+{
+  void **stack = NULL;
+  if(argptr(0, (void*)&stack, sizeof(void**)) < 0)
+    return -1;
+  return join(stack);
+}
 
 int
 sys_fork(void)
@@ -48,11 +75,17 @@ sys_sbrk(void)
   int addr;
   int n;
 
+
   if(argint(0, &n) < 0)
-    return -1;
+      return -1;
+
+  acquire(&memlock);
   addr = myproc()->sz;
-  if(growproc(n) < 0)
-    return -1;
+  if(growproc(n) < 0) {
+      release(&memlock);
+      return -1;
+  }
+  release(&memlock);
   return addr;
 }
 

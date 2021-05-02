@@ -24,6 +24,13 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
+/* Andrei: define userland prototypes for craeting threads, joining, as well as the ticket locks*/
+int thread_create(void (*start_routine)(void *, void *), void *arg1, void *arg2)
+int thread_join()
+void lock_init(lock_t *lock);
+void lock_acquire(lock_t *lock);
+void lock_release(lock_t *lock);
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);
