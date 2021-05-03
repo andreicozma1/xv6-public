@@ -9,12 +9,13 @@ void
 thread_func(void *arg1, void *arg2) {
     // Arg 1 is shared variable and arg2 is lock
     lock_t *lock = arg2;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 100; i++) {
         lock_acquire(lock);
-        *((int *) arg1) = *((int *) arg1) + 1;
+        int val = *((int *) arg1);
+        sleep(1);
+        val += 1;
+        *((int *) arg1) = val;
         lock_release(lock);
-        printf(1, "%d\n", *((int *) arg1));
-
     }
     exit();
 }
@@ -33,7 +34,7 @@ test()
     int t;
     int num_threads = 10;
     printf(1, "Spinning up %d threads\n", num_threads);
-    for (t = 1; t <= 10; t++) {
+    for (t = 1; t <= 50; t++) {
         // create the thread and give it the arguments structure and the lock
         int pid = thread_create(thread_func, shared, lock);
         printf(1, "Successfully created thread with PID %d.\n",pid);
@@ -41,14 +42,14 @@ test()
     }
 
     // Join on all the threads till all have finished
-    for (t = 1; t <= num_threads; t++) {
-        int pid = thread_join();
-        printf(1, "Successfully joined thread with PID %d\n", pid);
+//    for (t = 1; t <= num_threads; t++) {
+//        int pid = thread_join();
+//        printf(1, "Successfully joined thread with PID %d\n", pid);
 
-    }
+//    }
+//    printf(1, "Successfully joined on all threads.\n");
 
 
-    printf(1, "Successfully joined on all threads.\n");
     printf(1, "Final Shared Var Value: %d\n", *shared);
 
     // free the memory used for the lock

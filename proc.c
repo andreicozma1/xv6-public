@@ -242,8 +242,9 @@ exit(void)
     panic("init exiting");
 
   // Close all open files.
-  for(fd = 0; fd < NOFILE; fd++){
-    if(curproc->ofile[fd]){
+  for(fd = 0; fd < NOFILE; fd++) {
+      // If the process exits but still has threads
+    if(curproc->ofile[fd] && curproc->thread_ct == 0){
       fileclose(curproc->ofile[fd]);
       curproc->ofile[fd] = 0;
     }
@@ -261,10 +262,17 @@ exit(void)
 
   // Pass abandoned children to init.
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->parent == curproc){
-      p->parent = initproc;
-      if(p->state == ZOMBIE)
-        wakeup1(initproc);
+    if(p->parent == curproc) {
+      // set child threads parent to 0 and state to zombie
+      if(p->pgdir == curproc->pgdir){
+          p->parent = 0;
+          p->state = ZOMBIE;
+      } else {
+          // if normal process
+          p->parent = initproc;
+          if(p->state == ZOMBIE)
+              wakeup1(initproc);
+      }
     }
   }
 
@@ -282,13 +290,13 @@ wait(void)
   struct proc *p;
   int havekids, pid;
   struct proc *curproc = myproc();
-  
+
   acquire(&ptable.lock);
   for(;;){
     // Scan through table looking for exited children.
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != curproc || curproc->pgdir == p->pgdir)
+      if(p->parent != curproc || p->pgdir == curproc->pgdir)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE && p->thread_ct == 0) {
@@ -614,7 +622,7 @@ int join(void **stack)
       if(p->state != ZOMBIE)
         continue;
       if(p->state == ZOMBIE){
-        // Found one.
+          // Found one.
         curproc->thread_ct--;
         *stack = p->stack;
         pid = p->pid;
