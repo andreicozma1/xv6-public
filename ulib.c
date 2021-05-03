@@ -19,9 +19,9 @@ struct ptr_struct threads[MAX_THREADS];
 
 /* Andrei: x86 atomic add which returns the addition result */
 static inline int
-fetch_and_add(int *var, int val)
+fetch_and_add(volatile int *var, volatile int val)
 {
-    asm volatile("lock; xaddl %0, %1"
+    __asm__ volatile("lock; xaddl %0, %1"
     : "+r" (val), "+m" (*var)
     :
     : "memory");
@@ -41,9 +41,8 @@ void
 lock_acquire(lock_t *lock)
 {
     // Use the static inline function to spin the lock till the values become equal (on release)
-    while(lock->turn != fetch_and_add(&lock->ticket, 1))
-    { continue; }; // spin lock
-//    printf(1, "Lock acquired");
+    int val = fetch_and_add(&lock->ticket, 1);
+    while(lock->turn == val) { }; // spin lock
     // Lock acquired
 }
 
@@ -59,8 +58,6 @@ int
 thread_create(void (*fnc)(void*, void*), void* arg1, void* arg2)
 {
   // Use malloc to create userstack for thread
-  // The stack should be one page in size and page-aligned
-  // Therefore the address
   void* freeptr = malloc(PGSIZE*2);
   void* stack;
   if(freeptr == 0)

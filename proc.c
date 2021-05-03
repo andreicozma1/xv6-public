@@ -598,7 +598,7 @@ clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack)
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
   pid = np->pid;
   np->state = RUNNABLE;
-  // Increaase the current process' thread count
+  // Increase the current process' thread count
   curproc->thread_ct++;
   // Set the thread count of the new process to match
   np->thread_ct = curproc->thread_ct;
@@ -628,7 +628,7 @@ int join(void **stack)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        //freevm(p->pgdir);
+        freevm(p->pgdir);
         p->state = UNUSED;
         p->pid = 0;
         p->parent = 0;
