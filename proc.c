@@ -628,7 +628,6 @@ int join(void **stack)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
         p->state = UNUSED;
         p->pid = 0;
         p->parent = 0;

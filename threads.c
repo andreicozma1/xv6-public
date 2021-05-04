@@ -17,13 +17,11 @@ thread_func(void *arg1, void *arg2) {
         printf(1, "Thread value actual %d expected %d\n", *((int *) arg1), val);
     }
     lock_release(lock);
-
     exit();
 }
 
 void
-test()
-{
+test() {
     // Create a shared variable for the threads to be able to acquire lock
     int *shared = (int *) malloc(sizeof(int));
     *shared = 0;
@@ -38,27 +36,20 @@ test()
     for (t = 1; t <= num_threads; t++) {
         // create the thread and give it the arguments structure and the lock
         int pid = thread_create(thread_func, shared, lock);
-        printf(1, "Successfully created thread with PID %d.\n",pid);
-
+        printf(1, "Successfully created thread with PID %d.\n", pid);
     }
 
-//     Join on all the threads till all have finished
+    // Join on all the threads till all have finished
     for (t = 1; t <= num_threads; t++) {
         int pid = thread_join();
         printf(1, "Successfully joined thread with PID %d\n", pid);
-
     }
     printf(1, "Successfully joined on all threads.\n");
-
-
     printf(1, "Final Shared Var Value: %d\n", *shared);
-
-    // free the memory used for the lock
 }
 
 int
-main(void)
-{
+main(void) {
     test();
     exit();
 }
