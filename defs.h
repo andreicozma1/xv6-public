@@ -10,6 +10,8 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+extern struct spinlock memlock;
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -120,6 +122,10 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+/* Andrei: add prototypes for our new clone and join system calls as well as extern spinlock */
+int             clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack);
+int             join(void **stack);
+
 
 // swtch.S
 void            swtch(struct context**, struct context*);
